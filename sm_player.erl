@@ -15,18 +15,14 @@ init([]) ->
  
 handle_call({move, Direction}, _From, Tab) ->
         Reply = case ets:lookup(Tab, location) of
-               [{location, {X,Y}}] ->
-                   NewLocation = case Direction of
-		   	       	      north -> {X + 1, Y};
-				      east  -> {X, Y + 1};
-				      south -> {X - 1, Y};
-				      west  -> {X, Y - 1}
-		   end,
+               [{location, Location}] ->
+                   NewLocation = update_location(Location, Direction),
 		   ets:insert(Tab, {location, NewLocation}),
 		   NewLocation;		 
                [] ->
-                   ets:insert(Tab, {location, {0,0}}),		
-		   {0,0} 
+                   NewLocation = {0,0},
+		   ets:insert(Tab, {location, NewLocation}),		
+		   NewLocation
         end,
         {reply, Reply, Tab}.
  
@@ -34,3 +30,9 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info(_Msg, State) -> {noreply, State}.
 terminate(_Reason, _State) -> ok.
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
+
+
+update_location({X,Y}, north) -> {X + 1, Y};
+update_location({X,Y}, east)  -> {X, Y + 1};
+update_location({X,Y}, south) -> {X - 1, Y};
+update_location({X,Y}, west) -> {X, Y - 1}.
