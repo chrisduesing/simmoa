@@ -12,12 +12,7 @@ accept(ListenSocket) ->
 	accept(ListenSocket).
 
 handle(Socket) ->
-	       inet:setopts(Socket,[{active,once}]),
-	       receive
-		{tcp, Socket, Data} ->
-		      gen_tcp:send(Socket, Data),
-		      handle(Socket);
-		{tcp_closed,S} ->
-		      io:format("Socket ~w closed [~w]~n",[S,self()]),
-		      ok
-		end.
+	       {ok, Data} = gen_tcp:recv(Socket, 0),
+	       gen_tcp:send(Socket, Data),
+	       handle(Socket).
+		
