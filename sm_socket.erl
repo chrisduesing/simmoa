@@ -3,7 +3,7 @@
 -export([test/0]).
 
 test() ->
-       {ok, ListenSocket} = gen_tcp:listen(5558,[{active,false}]),
+       {ok, ListenSocket} = gen_tcp:listen(5550,[{active,false}]),
        accept(ListenSocket).
 
 accept(ListenSocket) ->
@@ -26,7 +26,8 @@ handle(Player, Socket) ->
 			 string:strip(RawData, right, $\n),
 			 right, $\r),
 	       Command = list_to_atom(Data),
-	       Response = sm_player:move(Player, Command),
-	       gen_tcp:send(Socket, term_to_binary(Response)),
+	       {X, Y} = sm_player:move(Player, Command),
+	       Response = ["You moved to ", X, ", ", Y],
+	       gen_tcp:send(Socket, Response),
 	       handle(Player, Socket).
 		
