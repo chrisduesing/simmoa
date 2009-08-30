@@ -2,12 +2,29 @@ simmoa is an Erlang based MUD
 =============================
 
 License: 
+-----------------------------
 The code is released under the MIT license.
 
 
 Installation:
+-----------------------------
 Still learning how to do packaging etc in Erlang, work in progress ;)
 
 
+Running:
+-----------------------------
+if all the files are compiled, then type in the Erlang repl:
+application:start(simmoa).
+
+
+Use:
+-----------------------------
+Telnet to port 5555. 
+Enter a player name when prompted. 
+Then any further input is interpreted as game commands.
+
+
 Feedback:
+-----------------------------
 is most welcome!
+send me a note: chris.duesing at gmail
