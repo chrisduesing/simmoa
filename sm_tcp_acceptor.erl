@@ -16,8 +16,9 @@
          terminate/2, code_change/3]).
 
 -record(state, {
-                listener,       % Listening socket
-                acceptor        % Asynchronous acceptor's internal reference
+                listener,		% Listening socket
+                acceptor,          	% Asynchronous acceptor's internal reference
+		connection_number 	% Counter
                }).
 
 -define(SERVER, ?MODULE).
@@ -55,7 +56,8 @@ init([]) ->
         {ok, Ref} = prim_inet:async_accept(ListenSocket, -1),
 	io:format("ListenSocket created for ~p\n", [Ref]),
         {ok, #state{listener = ListenSocket,
-                    acceptor = Ref}};
+                    acceptor = Ref,
+		    connection_number = 0}};
     {error, Reason} ->
         {stop, Reason}
     end.
@@ -90,7 +92,7 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
-            #state{listener=ListenSocket, acceptor=Ref} = State) ->
+            #state{listener=ListenSocket, acceptor=Ref, connection_number=Counter} = State) ->
     try
 	io:format("Client connected ~p\n", [ClientSocket]),
         case set_sockopt(ListenSocket, ClientSocket) of
@@ -100,7 +102,12 @@ handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
 
         %% New client connected - spawn a new process using the simple_one_for_one
         %% supervisor.
-        {ok, Pid} = sm_sup:start_child('sm_socket', ClientSocket),
+	X = Counter + 1,
+	Name = "sm_socket",
+	Reference = list_to_atom(Name ++ "_" ++ integer_to_list(X)),
+	Module = list_to_atom(Name),
+	io:format("Starting process ~p\n", [Name]),
+        {ok, Pid} = sm_sup:start_child(Module, ClientSocket, Reference),
         gen_tcp:controlling_process(ClientSocket, Pid),
 
         %% Signal the network driver that we are ready to accept another connection
@@ -109,7 +116,7 @@ handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
         {error, NewRef} -> exit({async_accept, inet:format_error(NewRef)})
         end,
 
-        {noreply, State#state{acceptor=NewRef}}
+        {noreply, State#state{acceptor=NewRef, connection_number=X}}
     catch exit:Why ->
         error_logger:error_msg("Error in async accept: ~p.\n", [Why]),
         {stop, Why, State}
