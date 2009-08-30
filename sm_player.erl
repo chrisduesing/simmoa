@@ -10,6 +10,7 @@ start_link(Player) -> gen_server:start_link({local, Player}, ?MODULE, [Player], 
 move(Player, Direction) -> gen_server:call(Player, {move, Direction}).
 
 init([Player]) ->
+	       io:format("initializing player ~p\n", [Player]),
        Tab = ets:new(Player, []),
        {ok, Tab}.
  
