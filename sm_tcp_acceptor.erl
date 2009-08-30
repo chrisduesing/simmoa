@@ -103,7 +103,7 @@ handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
         %% New client connected - spawn a new process using the simple_one_for_one
         %% supervisor.
 	X = Counter + 1,
-	Name = "sm_socket",
+	Name = "sm_tcp_client",
 	Reference = list_to_atom(Name ++ "_" ++ integer_to_list(X)),
 	Module = list_to_atom(Name),
 	io:format("Starting process ~p\n", [Name]),
