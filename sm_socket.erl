@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -31,8 +31,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Socket) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Socket], []).
+start_link(Socket, Reference) ->
+  gen_server:start_link({local, Reference}, ?MODULE, [Socket], []).
 
 
 %====================================================================
@@ -95,8 +95,8 @@ handle_cast(_Msg, State) ->
 handle_info({tcp, Socket, Bin}, #state{socket=Socket, player=_Player} = State) ->
     % Flow control: enable forwarding of next TCP message
     inet:setopts(Socket, [{active, once}]),
-    handle_request({data, Bin}, State);
-
+    handle_request({data, Bin}, State),
+    {noreply, State};
 
 handle_info(_Info, State) ->
   {noreply, State}.
@@ -124,15 +124,26 @@ code_change(_OldVsn, State, _Extra) ->
 
 handle_request({data, RawData}, #state{socket=Socket, player=Player} = _State)  ->
   try
-	Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
-	Command = list_to_atom(Data),
-	{X, Y} = sm_player:move(Player, Command),
-	Response = ["You moved to ", X, ", ", Y, "\r\n"],
+	%Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
+	[CommandString|Args] = string:tokens(RawData, " \r\n"),
+	Response = command_to_action(CommandString, Args, Player),
 	gen_tcp:send(Socket, Response),
-	gen_tcp:send(Socket, "> "),
+	gen_tcp:send(Socket, "\r\n> "),
 	{ok}
   catch
 	error:Reason ->
 	    {error, Reason}
   end.
 		    
+
+command_to_action("west", _Args, Player) ->
+  {X, Y} = sm_player:move(Player, west),  
+  ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)];
+
+command_to_action("w", _Args, Player) ->
+  {X, Y} = sm_player:move(Player, west),  
+  ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)];
+
+command_to_action(_CommandString, _Args, _Player) ->
+  %Command = list_to_atom(Data),
+  "unrecognized command.".
