@@ -171,6 +171,10 @@ command_to_action("south", _Args, Player, _Socket) ->
 command_to_action("s", _Args, Player, _Socket) ->
   sm_player:move(Player, south);  
 
+command_to_action("help", _Args, _Player, Socket) ->
+  {ok, Binary} = file:read_file("help"),
+  write_to_output(Socket, Binary);
+
 command_to_action(_CommandString, _Args, _Player, Socket) ->
   %Command = list_to_atom(CommandString),
   write_to_output(Socket, "unrecognized command.").
