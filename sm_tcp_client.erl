@@ -58,6 +58,8 @@ init([Socket, Reference]) ->
   io:format("~p logging in.\n", [Data]),
   Player = list_to_atom(Data),
   sm_player:start_link(Player, Reference, ?MODULE),
+  {ok, Motd} = file:read_file("motd"),
+  write_to_output(Socket, Motd),
   inet:setopts(Socket, [{active, once}]),
   {ok, #state{socket = Socket,
        	      reference = Reference,
