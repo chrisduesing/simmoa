@@ -107,7 +107,6 @@ handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
 	Name = "sm_tcp_client",
 	Reference = list_to_atom(Name ++ "_" ++ integer_to_list(X)),
 	Module = list_to_atom(Name),
-	io:format("Starting process ~p\n", [Name]),
         {ok, Pid} = sm_sup:start_child(Module, ClientSocket, Reference),
         gen_tcp:controlling_process(ClientSocket, Pid),
 

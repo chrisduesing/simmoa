@@ -33,6 +33,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Player, Client, ClientModule) -> 
+  io:format("start_link for player ~p\n", [Player]),
   gen_server:start_link({local, Player}, ?MODULE, [Player, Client, ClientModule], []).
 
 move(Player, Direction) -> 

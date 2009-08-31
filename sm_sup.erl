@@ -9,7 +9,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, start_child/3, start_child/2]).
+-export([start_link/0, start_child/3, start_player/3]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -27,15 +27,15 @@ start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 start_child(Module, Args, Reference) ->
-  io:format("Starting child ~p with args ~p\n", [Module, Args]),
+  io:format("Starting ~p as module ~p with args ~p~n", [Reference, Module, Args]),  
   Child = {Reference,{Module,start_link,[Args, Reference]},
             permanent,2000,worker,[Module]},
   supervisor:start_child(?MODULE, Child).
 
-start_child(Module, Reference) ->
-  io:format("Starting child ~p\n", [Module]),
-  Child = {Reference,{Module,start_link,[]},
-            permanent,2000,worker,[Module]},
+start_player(Player, Client, ClientModule) ->
+  io:format("Starting player ~p with reference to client ~p in module ~p ~n", [Player, Client, ClientModule]),
+  Child = {Player,{'sm_player','start_link',[Player, Client, ClientModule]},
+            permanent,2000,worker,['sm_player']},
   supervisor:start_child(?MODULE, Child).
 
 
