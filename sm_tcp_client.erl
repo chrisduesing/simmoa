@@ -177,4 +177,4 @@ command_to_action("help", _Args, _Player, Socket) ->
 
 command_to_action(_CommandString, _Args, _Player, Socket) ->
   %Command = list_to_atom(CommandString),
-  write_to_output(Socket, "unrecognized command.").
+  write_to_output(Socket, "Sorry, could not process that. Type help for a list of valid commands.").
