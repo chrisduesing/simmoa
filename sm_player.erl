@@ -11,7 +11,7 @@
 -behaviour(gen_server).
  
 %% API
--export([move/2, start_link/3]).
+-export([move/2, notify/2, start_link/3]).
  
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -39,6 +39,8 @@ start_link(Player, Client, ClientModule) ->
 move(Player, Direction) -> 
   gen_server:cast(Player, {move, Direction}).
 
+notify(Player, Update) ->
+  gen_server:cast(Player, {notify, Update}).
 
 %====================================================================
 %% gen_server callbacks
@@ -76,11 +78,17 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({move, Direction}, #state{client=Client, client_module=ClientModule, player=_Player, location=Location} = State) ->
+handle_cast({move, Direction}, #state{client=Client, client_module=ClientModule, location=Location, player=Player} = State) ->
   NewLocation = update_location(Location, Direction),
+  RoomId = sm_world:get_location_id(NewLocation),
+  sm_room:enter(RoomId, Player),
   NewState = State#state{location=NewLocation},
   apply(ClientModule, notify, [Client, {location, NewLocation}]),
   {noreply, NewState};
+
+handle_cast({notify, Update}, #state{client=Client, client_module=ClientModule} = State) ->
+  apply(ClientModule, notify, [Client, {notify, Update}]),
+  {noreply, State};
 
 handle_cast(_Msg, State) -> 
   {noreply, State}.

@@ -29,7 +29,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Location) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Location], []).
+  gen_server:start_link({local, sm_world:get_location_id(Location)}, ?MODULE, [Location], []).
 
 enter(Location, Player) ->
   gen_server:cast(Location, {enter, Player}).
@@ -73,6 +73,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({enter, Player}, #state{players=Players} = State) ->
   NewPlayers = [Player | Players],
   NewState = State#state{players=NewPlayers},
+  sm_player:notify(Player, Players),
   {noreply, NewState};
 
 handle_cast({leave, Player}, #state{players=Players} = State) ->

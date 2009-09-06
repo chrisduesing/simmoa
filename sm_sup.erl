@@ -54,7 +54,9 @@ start_player(Player, Client, ClientModule) ->
 init([]) ->
   TcpAcceptor = {'sm_tcp_acceptor',{'sm_tcp_acceptor',start_link,[]},
             permanent,2000,worker,['sm_tcp_acceptor']},
-  {ok,{{one_for_all,0,1}, [TcpAcceptor]}}.
+  World = {'sm_world',{'sm_world',start_link,[]},
+            permanent,2000,worker,['sm_world']},
+  {ok,{{one_for_all,0,1}, [TcpAcceptor, World]}}.
 
 %%====================================================================
 %% Internal functions

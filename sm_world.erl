@@ -1,28 +1,21 @@
 %%%-------------------------------------------------------------------
-%%% File    : sm_socket.erl
+%%% File    : .erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
-%%% Description : A tcp socket
-%%%
-%%% Created : August 29, 2009
+%%% Description : gen server.
+%%%%%% Created :  
 %%%-------------------------------------------------------------------
-
--module(sm_tcp_client).
+-module(sm_world).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/2, notify/2]).
+-export([start_link/0, get_location_id/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {
-                socket,			% The socket the client is connected on
-                player,			% The registered name of the associated player
-		reference		% The registered name of the sm_tcp_client
-               }).
-
+-record(state, {rooms}).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -32,13 +25,13 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Socket, Reference) ->
-  gen_server:start_link({local, Reference}, ?MODULE, [Socket, Reference], []).
+start_link() ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-notify(Reference, Event) ->
-  gen_server:cast(Reference, Event).
+get_location_id({X, Y}) ->
+  list_to_atom(lists:concat(['loc_', X, '_', Y])).
 
-%====================================================================
+%%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
@@ -49,25 +42,14 @@ notify(Reference, Event) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Socket, Reference]) ->
-  io:format("initializing socket, prompting player\n", []),
-  inet:setopts(Socket, [{active, false}]),
-  gen_tcp:send(Socket, "username> "),
-  {ok, RawData} = gen_tcp:recv(Socket, 0),
-  Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
-  io:format("~p logging in.\n", [Data]),
-  Player = list_to_atom(Data),
-  sm_player:start_link(Player, Reference, ?MODULE),
-  {ok, Motd} = file:read_file("motd"),
-  write_to_output(Socket, Motd),
-  inet:setopts(Socket, [{active, once}]),
-  {ok, #state{socket = Socket,
-       	      reference = Reference,
-              player = Player}};
-
 init([]) ->
-  io:format("entered the empty init", []),
-  ok.
+  Rooms = [],
+  %Rooms ++ [],  
+  %Rooms ++ [],
+sm_room:start_link({0, 0}),
+sm_room:start_link({0, 1}),
+
+  {ok, #state{rooms=Rooms}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -88,18 +70,7 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({location, {X, Y}},  #state{socket=Socket, player=_Player} = State) ->
-  Message = ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)],
-  write_to_output(Socket, Message),
-  {noreply, State};
-
-handle_cast({notify, Event},  #state{socket=Socket, player=_Player} = State) ->
-  Message = [Event],
-  write_to_output(Socket, Message),
-  {noreply, State};
-
-handle_cast(Msg, State) ->
-  io:format("Client Socket received an unhandled event ~p~n", [Msg]),
+handle_cast(_Msg, State) ->
   {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -108,12 +79,6 @@ handle_cast(Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({tcp, Socket, Bin}, #state{socket=Socket, player=_Player} = State) ->
-    % Flow control: enable forwarding of next TCP message
-    inet:setopts(Socket, [{active, once}]),
-    handle_request({data, Bin}, State),
-    {noreply, State};
-
 handle_info(_Info, State) ->
   {noreply, State}.
 
@@ -138,50 +103,3 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-write_to_output(Socket, Message) ->
-  gen_tcp:send(Socket, Message),
-  gen_tcp:send(Socket, "\r\n> ").
-
-
-handle_request({data, RawData}, #state{socket=Socket, player=Player} = _State)  ->
-  try
-	%Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
-	[CommandString|Args] = string:tokens(RawData, " \r\n"),
-	command_to_action(CommandString, Args, Player, Socket),
-	{ok}
-  catch
-	error:Reason ->
-	    {error, Reason}
-  end.
-		    
-command_to_action("north", _Args, Player, _Socket) ->
-  sm_player:move(Player, north); 
-
-command_to_action("n", _Args, Player, _Socket) ->
-  sm_player:move(Player, north);
-
-command_to_action("east", _Args, Player, _Socket) ->
-  sm_player:move(Player, east);  
-
-command_to_action("e", _Args, Player, _Socket) ->
-  sm_player:move(Player, east);  
-
-command_to_action("west", _Args, Player, _Socket) ->
-  sm_player:move(Player, west);  
-
-command_to_action("w", _Args, Player, _Socket) ->
-  sm_player:move(Player, west);  
-
-command_to_action("south", _Args, Player, _Socket) ->
-  sm_player:move(Player, south);  
-
-command_to_action("s", _Args, Player, _Socket) ->
-  sm_player:move(Player, south);  
-
-command_to_action("help", _Args, _Player, Socket) ->
-  {ok, Binary} = file:read_file("help"),
-  write_to_output(Socket, Binary);
-
-command_to_action(_CommandString, _Args, _Player, Socket) ->
-  %Command = list_to_atom(CommandString),
-  write_to_output(Socket, "Sorry, could not process that. Type help for a list of valid commands.").
