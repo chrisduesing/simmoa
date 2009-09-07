@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : sm_socket.erl
+%%% File    : sm_tcp_client.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
 %%% Description : A tcp socket
 %%%
@@ -10,6 +10,8 @@
 
 -behaviour(gen_server).
 
+-include("player.hrl").
+
 %% API
 -export([start_link/2, notify/2]).
 
@@ -19,8 +21,7 @@
 
 -record(state, {
                 socket,			% The socket the client is connected on
-                player,			% The registered name of the associated player
-		reference		% The registered name of the sm_tcp_client
+                player			% The player record
                }).
 
 -define(SERVER, ?MODULE).
@@ -32,11 +33,11 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Socket, Reference) ->
-  gen_server:start_link({local, Reference}, ?MODULE, [Socket, Reference], []).
+start_link(Socket, Client) ->
+  gen_server:start_link({local, Client}, ?MODULE, [Socket, Client], []).
 
-notify(Reference, Event) ->
-  gen_server:cast(Reference, Event).
+notify(Client, Event) ->
+  gen_server:cast(Client, Event).
 
 %====================================================================
 %% gen_server callbacks
@@ -49,20 +50,20 @@ notify(Reference, Event) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Socket, Reference]) ->
+init([Socket, Client]) ->
   io:format("initializing socket, prompting player\n", []),
   inet:setopts(Socket, [{active, false}]),
   gen_tcp:send(Socket, "username> "),
   {ok, RawData} = gen_tcp:recv(Socket, 0),
   Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
   io:format("~p logging in.\n", [Data]),
-  Player = list_to_atom(Data),
-  sm_player:start_link(Player, Reference, ?MODULE),
+  Avatar = list_to_atom(Data),
+  Player = #player{avatar=Avatar, client=Client, client_module=?MODULE},
+  sm_avatar:start_link(Player),
   {ok, Motd} = file:read_file("motd"),
   write_to_output(Socket, Motd),
   inet:setopts(Socket, [{active, once}]),
   {ok, #state{socket = Socket,
-       	      reference = Reference,
               player = Player}};
 
 init([]) ->
@@ -93,7 +94,7 @@ handle_cast({location, {X, Y}},  #state{socket=Socket, player=_Player} = State) 
   write_to_output(Socket, Message),
   {noreply, State};
 
-handle_cast({notify, Event},  #state{socket=Socket, player=_Player} = State) ->
+handle_cast({notify, Event},  #state{socket=Socket} = State) ->
   Message = [Event],
   write_to_output(Socket, Message),
   {noreply, State};
@@ -108,7 +109,7 @@ handle_cast(Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({tcp, Socket, Bin}, #state{socket=Socket, player=_Player} = State) ->
+handle_info({tcp, Socket, Bin}, #state{socket=Socket} = State) ->
     % Flow control: enable forwarding of next TCP message
     inet:setopts(Socket, [{active, once}]),
     handle_request({data, Bin}, State),
@@ -143,45 +144,8 @@ write_to_output(Socket, Message) ->
   gen_tcp:send(Socket, "\r\n> ").
 
 
-handle_request({data, RawData}, #state{socket=Socket, player=Player} = _State)  ->
-  try
-	%Data = string:strip(string:strip(RawData, right, $\n), right, $\r),
-	[CommandString|Args] = string:tokens(RawData, " \r\n"),
-	command_to_action(CommandString, Args, Player, Socket),
-	{ok}
-  catch
-	error:Reason ->
-	    {error, Reason}
-  end.
-		    
-command_to_action("north", _Args, Player, _Socket) ->
-  sm_player:move(Player, north); 
+handle_request({data, RawData}, #state{player=Player} = _State)  ->
+  [CommandString|Args] = string:tokens(RawData, " \r\n"),
+  sm_interpreter:interpret(CommandString, Args, Player),
+  ok.
 
-command_to_action("n", _Args, Player, _Socket) ->
-  sm_player:move(Player, north);
-
-command_to_action("east", _Args, Player, _Socket) ->
-  sm_player:move(Player, east);  
-
-command_to_action("e", _Args, Player, _Socket) ->
-  sm_player:move(Player, east);  
-
-command_to_action("west", _Args, Player, _Socket) ->
-  sm_player:move(Player, west);  
-
-command_to_action("w", _Args, Player, _Socket) ->
-  sm_player:move(Player, west);  
-
-command_to_action("south", _Args, Player, _Socket) ->
-  sm_player:move(Player, south);  
-
-command_to_action("s", _Args, Player, _Socket) ->
-  sm_player:move(Player, south);  
-
-command_to_action("help", _Args, _Player, Socket) ->
-  {ok, Binary} = file:read_file("help"),
-  write_to_output(Socket, Binary);
-
-command_to_action(_CommandString, _Args, _Player, Socket) ->
-  %Command = list_to_atom(CommandString),
-  write_to_output(Socket, "Sorry, could not process that. Type help for a list of valid commands.").

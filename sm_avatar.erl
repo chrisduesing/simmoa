@@ -6,20 +6,20 @@
 %%% Created : August 29, 2009
 %%%-------------------------------------------------------------------
 
--module(sm_player).
+-module(sm_avatar).
 
 -behaviour(gen_server).
+
+-include("player.hrl").
  
 %% API
--export([move/2, notify/2, start_link/3]).
+-export([move/2, notify/2, start_link/1]).
  
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -record(state, {
-                client,			% The registered name of the connected client
-		client_module,		% The module that the client is using (ie sm_tcp_client)
-                player,			% The registered name of the Player
+                player,			% The player record for this avatar
 		location		% The current in world location of the player
                }).
 
@@ -32,15 +32,15 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Player, Client, ClientModule) -> 
-  io:format("start_link for player ~p\n", [Player]),
-  gen_server:start_link({local, Player}, ?MODULE, [Player, Client, ClientModule], []).
+start_link(#player{avatar=Avatar} = Player) -> 
+  io:format("start_link for avatar ~p\n", [Avatar]),
+  gen_server:start_link({local, Avatar}, ?MODULE, [Player], []).
 
-move(Player, Direction) -> 
-  gen_server:cast(Player, {move, Direction}).
+move(Avatar, Direction) -> 
+  gen_server:cast(Avatar, {move, Direction}).
 
-notify(Player, Update) ->
-  gen_server:cast(Player, {notify, Update}).
+notify(Avatar, Update) ->
+  gen_server:cast(Avatar, {notify, Update}).
 
 %====================================================================
 %% gen_server callbacks
@@ -53,9 +53,9 @@ notify(Player, Update) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Player, Client, ClientModule]) ->
-  io:format("initializing player ~p\n", [Player]),
-  State = #state{client=Client, client_module=ClientModule, player=Player, location={0,0}},
+init([#player{avatar=Avatar} = Player]) ->
+  io:format("initializing avatar ~p\n", [Avatar]),
+  State = #state{player=Player, location={0,0}},
   {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -78,15 +78,17 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({move, Direction}, #state{client=Client, client_module=ClientModule, location=Location, player=Player} = State) ->
+handle_cast({move, Direction}, #state{player=Player, location=Location} = State) ->
+  #player{avatar=Avatar, client=Client, client_module=ClientModule} = Player,
   NewLocation = update_location(Location, Direction),
   RoomId = sm_world:get_location_id(NewLocation),
-  sm_room:enter(RoomId, Player),
+  sm_room:enter(RoomId, Avatar),
   NewState = State#state{location=NewLocation},
   apply(ClientModule, notify, [Client, {location, NewLocation}]),
   {noreply, NewState};
 
-handle_cast({notify, Update}, #state{client=Client, client_module=ClientModule} = State) ->
+handle_cast({notify, Update}, #state{player=Player} = State) ->
+  #player{client=Client, client_module=ClientModule} = Player,
   apply(ClientModule, notify, [Client, {notify, Update}]),
   {noreply, State};
 

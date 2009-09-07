@@ -73,7 +73,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({enter, Player}, #state{players=Players} = State) ->
   NewPlayers = [Player | Players],
   NewState = State#state{players=NewPlayers},
-  sm_player:notify(Player, Players),
+  sm_avatar:notify(Player, Players),
   {noreply, NewState};
 
 handle_cast({leave, Player}, #state{players=Players} = State) ->

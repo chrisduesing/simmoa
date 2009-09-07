@@ -8,8 +8,10 @@
 
 -behaviour(supervisor).
 
+-include("player.hrl").
+
 %% API
--export([start_link/0, start_child/3, start_player/3]).
+-export([start_link/0, start_child/3, start_player/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -32,10 +34,10 @@ start_child(Module, Args, Reference) ->
             permanent,2000,worker,[Module]},
   supervisor:start_child(?MODULE, Child).
 
-start_player(Player, Client, ClientModule) ->
-  io:format("Starting player ~p with reference to client ~p in module ~p ~n", [Player, Client, ClientModule]),
-  Child = {Player,{'sm_player','start_link',[Player, Client, ClientModule]},
-            permanent,2000,worker,['sm_player']},
+start_player(#player{avatar=Avatar, client=Client, client_module=ClientModule} = Player) ->
+  io:format("Starting avatar ~p with reference to client ~p in module ~p ~n", [Avatar, Client, ClientModule]),
+  Child = {Avatar,{'sm_avatar','start_link',[Player]},
+            permanent,2000,worker,['sm_avatar']},
   supervisor:start_child(?MODULE, Child).
 
 
