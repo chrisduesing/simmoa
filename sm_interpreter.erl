@@ -3,6 +3,7 @@
 -export([interpret/3, notify/2]).
 
 -include("player.hrl").
+-include("room.hrl").
 
 %% API
 
@@ -47,10 +48,11 @@ command_to_action(_CommandString, _Args, #player{client=Client, client_module=Cl
 
 %% Internal - outbound
 
-notification_to_message({look_result, Avatars}, #player{client=Client, client_module=ClientModule} = _Player)
-				      				       				   when length(Avatars) > 0 ->
-  AvatarMessage = [atom_to_list(A) ++ " is standing here.\r\n" || A <- Avatars],
-  ClientModule:notify(Client, lists:flatten(AvatarMessage));
+notification_to_message({look_result, Room}, #player{client=Client, client_module=ClientModule} = _Player) ->
+  #room{avatars=Avatars, description=Description} = Room,
+  AvatarMessage = "\r\n" ++ [atom_to_list(A) ++ " is standing here.\r\n" || A <- Avatars],
+  RoomMessage = Description ++ AvatarMessage,
+  ClientModule:notify(Client, lists:flatten(RoomMessage));
 
 notification_to_message({location, {X, Y}}, #player{client=Client, client_module=ClientModule} = _Player) ->
   Message = ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)],

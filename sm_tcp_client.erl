@@ -138,9 +138,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 
 write_to_output(Socket, Message) ->
-  gen_tcp:send(Socket, "\r\n "),
+  gen_tcp:send(Socket, "\r\n"),
   gen_tcp:send(Socket, Message),
-  gen_tcp:send(Socket, "\r\n> ").
+  gen_tcp:send(Socket, "\r\n>").
 
 
 handle_request({data, RawData}, #state{player=Player} = _State)  ->

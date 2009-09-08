@@ -1,24 +1,22 @@
 %%%-------------------------------------------------------------------
-%%% File    : .erl
+%%% File    : sm_room.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
 %%% Description : gen server.
-%%%%%% Created :  
+%%% Created : September 2009
 %%%-------------------------------------------------------------------
 -module(sm_room).
 
 -behaviour(gen_server).
 
+-include("room.hrl").
+
 %% API
--export([start_link/1, enter/2, leave/2]).
+-export([start_link/2, enter/2, leave/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {
-	         location,	% the point location of this room
-	         avatars	% a list of avatars in this room
-	       }).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -28,8 +26,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Location) ->
-  gen_server:start_link({local, sm_world:get_location_id(Location)}, ?MODULE, [Location], []).
+start_link(Location, Description) ->
+  gen_server:start_link({local, sm_world:get_location_id(Location)}, ?MODULE, [Location, Description], []).
 
 enter(Location, Avatar) ->
   gen_server:cast(Location, {enter, Avatar}).
@@ -48,8 +46,9 @@ leave(Location, Avatar) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Location]) ->
-  {ok, #state{location=Location, avatars=[]}}.
+init([Location, Description]) ->
+  Room = #room{location=Location, exits=[n,e,s,w], avatars=[], description=Description},
+  {ok, Room}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -70,16 +69,16 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({enter, Avatar}, #state{avatars=Avatars} = State) ->
+handle_cast({enter, Avatar}, #room{avatars=Avatars} = Room) ->
   NewAvatars = [Avatar | Avatars],
-  NewState = State#state{avatars=NewAvatars},
-  sm_avatar:notify(Avatar, {look_result, Avatars}),
-  {noreply, NewState};
+  UpdatedRoom = Room#room{avatars=NewAvatars},
+  sm_avatar:notify(Avatar, {look_result, Room}),
+  {noreply, UpdatedRoom};
 
-handle_cast({leave, Avatar}, #state{avatars=Avatars} = State) ->
+handle_cast({leave, Avatar}, #room{avatars=Avatars} = Room) ->
   NewAvatars = Avatars -- [Avatar],
-  NewState = State#state{avatars=NewAvatars},
-  {noreply, NewState};
+  UpdatedRoom = Room#room{avatars=NewAvatars},
+  {noreply, UpdatedRoom};
 
 handle_cast(_Msg, State) ->
   {noreply, State}.
