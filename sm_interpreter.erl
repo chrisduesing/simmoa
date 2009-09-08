@@ -1,6 +1,6 @@
 -module(sm_interpreter).
 
--export([interpret/3]).
+-export([interpret/3, notify/2]).
 
 -include("player.hrl").
 
@@ -9,8 +9,10 @@
 interpret(Command, Args, Player) ->
   command_to_action(Command, Args, Player).
 
+notify(Update, Player) ->
+  notification_to_message(Update, Player).
 
-%% Internal 
+%% Internal - inbound 
 
 command_to_action("north", _Args, #player{avatar=Avatar} = _Player) ->
   sm_avatar:move(Avatar, north); 
@@ -38,7 +40,26 @@ command_to_action("s", _Args, #player{avatar=Avatar} = _Player) ->
 
 command_to_action("help", _Args, #player{client=Client, client_module=ClientModule} = _Player) ->
   {ok, Binary} = file:read_file("help"),
-  ClientModule:notify(Client, {help, Binary});
+  ClientModule:notify(Client, Binary);
 
 command_to_action(_CommandString, _Args, #player{client=Client, client_module=ClientModule} = _Player) ->
-  ClientModule:notify(Client, {bad_command, "Sorry, could not process that. Type help for a list of valid commands."}).
+  ClientModule:notify(Client, "Sorry, could not process that. Type help for a list of valid commands.").
+
+%% Internal - outbound
+
+notification_to_message({look_result, Avatars}, #player{client=Client, client_module=ClientModule} = _Player)
+				      				       				   when length(Avatars) > 0 ->
+  AvatarMessage = [atom_to_list(A) ++ " is standing here.\r\n" || A <- Avatars],
+  ClientModule:notify(Client, lists:flatten(AvatarMessage));
+
+notification_to_message({location, {X, Y}}, #player{client=Client, client_module=ClientModule} = _Player) ->
+  Message = ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)],
+  ClientModule:notify(Client, lists:flatten(Message));
+
+notification_to_message({_, Update}, #player{avatar=Avatar} = _Player) ->
+  io:format("sm_interpreter received an unhandled update ~p for ~p~n", [Update, Avatar]);
+
+notification_to_message(_Update, #player{avatar=Avatar} = _Player) ->
+  io:format("sm_interpreter received an unhandled update for ~p, dropping~n", [Avatar]).
+
+

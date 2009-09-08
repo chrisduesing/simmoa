@@ -37,7 +37,7 @@ start_link(Socket, Client) ->
   gen_server:start_link({local, Client}, ?MODULE, [Socket, Client], []).
 
 notify(Client, Event) ->
-  gen_server:cast(Client, Event).
+  gen_server:cast(Client, {notify, Event}).
 
 %====================================================================
 %% gen_server callbacks
@@ -62,6 +62,8 @@ init([Socket, Client]) ->
   sm_avatar:start_link(Player),
   {ok, Motd} = file:read_file("motd"),
   write_to_output(Socket, Motd),
+  RoomId = sm_world:get_location_id({0,0}),
+  sm_room:enter(RoomId, Avatar),  
   inet:setopts(Socket, [{active, once}]),
   {ok, #state{socket = Socket,
               player = Player}};
@@ -89,13 +91,9 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({location, {X, Y}},  #state{socket=Socket, player=_Player} = State) ->
-  Message = ["You moved to ",integer_to_list(X), ", ", integer_to_list(Y)],
-  write_to_output(Socket, Message),
-  {noreply, State};
-
 handle_cast({notify, Event},  #state{socket=Socket} = State) ->
   Message = [Event],
+  io:format("sending ~s to client \n", [Message]),
   write_to_output(Socket, Message),
   {noreply, State};
 
@@ -140,6 +138,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 
 write_to_output(Socket, Message) ->
+  gen_tcp:send(Socket, "\r\n "),
   gen_tcp:send(Socket, Message),
   gen_tcp:send(Socket, "\r\n> ").
 

@@ -17,7 +17,7 @@
 
 -record(state, {
 	         location,	% the point location of this room
-	         players	% a list of players in this room
+	         avatars	% a list of avatars in this room
 	       }).
 -define(SERVER, ?MODULE).
 
@@ -31,11 +31,11 @@
 start_link(Location) ->
   gen_server:start_link({local, sm_world:get_location_id(Location)}, ?MODULE, [Location], []).
 
-enter(Location, Player) ->
-  gen_server:cast(Location, {enter, Player}).
+enter(Location, Avatar) ->
+  gen_server:cast(Location, {enter, Avatar}).
 
-leave(Location, Player) ->
-  gen_server:cast(Location, {leave, Player}).
+leave(Location, Avatar) ->
+  gen_server:cast(Location, {leave, Avatar}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -49,7 +49,7 @@ leave(Location, Player) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Location]) ->
-  {ok, #state{location=Location, players=[]}}.
+  {ok, #state{location=Location, avatars=[]}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -70,15 +70,15 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({enter, Player}, #state{players=Players} = State) ->
-  NewPlayers = [Player | Players],
-  NewState = State#state{players=NewPlayers},
-  sm_avatar:notify(Player, Players),
+handle_cast({enter, Avatar}, #state{avatars=Avatars} = State) ->
+  NewAvatars = [Avatar | Avatars],
+  NewState = State#state{avatars=NewAvatars},
+  sm_avatar:notify(Avatar, {look_result, Avatars}),
   {noreply, NewState};
 
-handle_cast({leave, Player}, #state{players=Players} = State) ->
-  NewPlayers = Players -- [Player],
-  NewState = State#state{players=NewPlayers},
+handle_cast({leave, Avatar}, #state{avatars=Avatars} = State) ->
+  NewAvatars = Avatars -- [Avatar],
+  NewState = State#state{avatars=NewAvatars},
   {noreply, NewState};
 
 handle_cast(_Msg, State) ->

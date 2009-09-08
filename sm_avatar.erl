@@ -79,17 +79,19 @@ handle_call(_Request, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({move, Direction}, #state{player=Player, location=Location} = State) ->
-  #player{avatar=Avatar, client=Client, client_module=ClientModule} = Player,
+  #player{avatar=Avatar} = Player,
   NewLocation = update_location(Location, Direction),
-  RoomId = sm_world:get_location_id(NewLocation),
-  sm_room:enter(RoomId, Avatar),
+  RoomId = sm_world:get_location_id(Location),  
+  NewRoomId = sm_world:get_location_id(NewLocation),
+  sm_room:leave(RoomId, Avatar),
+  sm_room:enter(NewRoomId, Avatar),
   NewState = State#state{location=NewLocation},
-  apply(ClientModule, notify, [Client, {location, NewLocation}]),
+  sm_interpreter:notify({location, NewLocation}, Player),
   {noreply, NewState};
 
 handle_cast({notify, Update}, #state{player=Player} = State) ->
-  #player{client=Client, client_module=ClientModule} = Player,
-  apply(ClientModule, notify, [Client, {notify, Update}]),
+  %io:format("notifying avatar of non list update ~p\n", [Update]),
+  sm_interpreter:notify(Update, Player),
   {noreply, State};
 
 handle_cast(_Msg, State) -> 
