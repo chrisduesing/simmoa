@@ -1,21 +1,28 @@
 %%%-------------------------------------------------------------------
-%%% File    : .erl
+%%% File    : sm_player.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
-%%% Description : gen server.
-%%%%%% Created :  
+%%% Description : A tcp socket
+%%%
+%%% Created : August 29, 2009
 %%%-------------------------------------------------------------------
--module(sm_world).
+
+-module(simmoa_avatar).
 
 -behaviour(gen_server).
 
+-include("player.hrl").
+ 
 %% API
--export([start_link/0, get_location_id/1]).
-
+-export([move/2, notify/2, start_link/1]).
+ 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {rooms}).
+-record(state, {
+                player,			% The player record for this avatar
+		location		% The current in world location of the player
+               }).
+
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -25,13 +32,17 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(#player{avatar=Avatar} = Player) -> 
+  io:format("start_link for avatar ~p\n", [Avatar]),
+  gen_server:start_link({local, Avatar}, ?MODULE, [Player], []).
 
-get_location_id({X, Y}) ->
-  list_to_atom(lists:concat(['loc_', X, '_', Y])).
+move(Avatar, Direction) -> 
+  gen_server:cast(Avatar, {move, Direction}).
 
-%%====================================================================
+notify(Avatar, Update) ->
+  gen_server:cast(Avatar, {notify, Update}).
+
+%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
@@ -42,14 +53,10 @@ get_location_id({X, Y}) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
-  Rooms = [],
-  %Rooms ++ [],  
-  %Rooms ++ [],
-sm_room:start_link({0, 0}, "An uninteresting room."),
-sm_room:start_link({0, 1}, "A room full of monkeys!"),
-
-  {ok, #state{rooms=Rooms}}.
+init([#player{avatar=Avatar} = Player]) ->
+  io:format("initializing avatar ~p\n", [Avatar]),
+  State = #state{player=Player, location={0,0}},
+  {ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -59,10 +66,11 @@ sm_room:start_link({0, 1}, "A room full of monkeys!"),
 %%                                      {stop, Reason, Reply, State} |
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
-%%--------------------------------------------------------------------
+%%-------------------------------------------------------------------- 
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
+
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -70,7 +78,23 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
+handle_cast({move, Direction}, #state{player=Player, location=Location} = State) ->
+  #player{avatar=Avatar} = Player,
+  NewLocation = update_location(Location, Direction),
+  RoomId = sm_world:get_location_id(Location),  
+  NewRoomId = sm_world:get_location_id(NewLocation),
+  sm_room:leave(RoomId, Avatar),
+  sm_room:enter(NewRoomId, Avatar),
+  NewState = State#state{location=NewLocation},
+  sm_interpreter:notify({location, NewLocation}, Player),
+  {noreply, NewState};
+
+handle_cast({notify, Update}, #state{player=Player} = State) ->
+  %io:format("notifying avatar of non list update ~p\n", [Update]),
+  sm_interpreter:notify(Update, Player),
+  {noreply, State};
+
+handle_cast(_Msg, State) -> 
   {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -79,7 +103,7 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info(_Msg, State) -> 
   {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -103,3 +127,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
+
+update_location({X,Y}, north) -> {X + 1, Y};
+update_location({X,Y}, east)  -> {X, Y + 1};
+update_location({X,Y}, south) -> {X - 1, Y};
+update_location({X,Y}, west) -> {X, Y - 1}.
