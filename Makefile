@@ -1,5 +1,5 @@
 all:
-	(cd src;$(MAKE))
+	(cd src;$(MAKE);cp *.hrl ../ebin)
 
 clean:
-	(cd src;$(MAKE) clean)
+	(cd src;$(MAKE) clean;cp *.hrl ../ebin)

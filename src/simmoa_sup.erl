@@ -9,15 +9,28 @@
 -behaviour(supervisor).
 
 %% External exports
--export([start_link/0, upgrade/0]).
+-export([start_link/0, start_child/3, start_player/1, upgrade/0]).
 
 %% supervisor callbacks
 -export([init/1]).
+
+-include("player.hrl").
 
 %% @spec start_link() -> ServerRet
 %% @doc API for starting the supervisor.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+start_child(Module, Args, Reference) ->
+    io:format("Starting ~p as module ~p with args ~p~n", [Reference, Module, Args]),  
+    Child = {Reference,{Module,start_link,[Args, Reference]}, permanent,2000,worker,[Module]},
+    supervisor:start_child(?MODULE, Child).
+
+start_player(#player{avatar=Avatar, client=Client, client_module=ClientModule} = Player) ->
+    io:format("Starting avatar ~p with reference to client ~p in module ~p ~n", [Avatar, Client, ClientModule]),
+    Child = {Avatar,{'sm_avatar','start_link',[Player]},
+            permanent,2000,worker,['sm_avatar']},
+    supervisor:start_child(?MODULE, Child).
 
 %% @spec upgrade() -> ok
 %% @doc Add processes if necessary.
@@ -49,6 +62,10 @@ init([]) ->
     Web = {simmoa_web,
            {simmoa_web, start, [WebConfig]},
            permanent, 5000, worker, dynamic},
+    TcpAcceptor = {'sm_tcp_acceptor',{'simmoa_tcp_acceptor',start_link,[]},
+            permanent,2000,worker,['simmoa_tcp_acceptor']},
+    World = {'sm_world',{'simmoa_world',start_link,[]},
+            permanent,2000,worker,['simmoa_world']},
 
-    Processes = [Web],
+    Processes = [Web, TcpAcceptor, World],
     {ok, {{one_for_one, 10, 10}, Processes}}.
