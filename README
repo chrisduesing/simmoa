@@ -8,13 +8,15 @@ The code is released under the MIT license.
 
 Installation:
 -----------------------------
-Still learning how to do packaging etc in Erlang, work in progress ;)
+download from github.
+run make from the command line.
 
 
 Running:
 -----------------------------
-if all the files are compiled, then type in the Erlang repl:
-application:start(simmoa).
+./start.sh from the command line
+or
+application:start(simmoa). from the Erlang repl
 
 
 Use:
@@ -23,6 +25,8 @@ Telnet to port 5555.
 Enter a player name when prompted. 
 Then any further input is interpreted as game commands.
 
+coming soon:
+http://localhost:8080/
 
 Feedback:
 -----------------------------
