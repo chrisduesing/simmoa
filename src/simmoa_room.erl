@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : sm_room.erl
+%%% File    : simmoa_room.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
 %%% Description : gen server.
 %%% Created : September 2009
@@ -27,7 +27,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Location, Description) ->
-  gen_server:start_link({local, sm_world:get_location_id(Location)}, ?MODULE, [Location, Description], []).
+  gen_server:start_link({local, simmoa_world:get_location_id(Location)}, ?MODULE, [Location, Description], []).
 
 enter(Location, Avatar) ->
   gen_server:cast(Location, {enter, Avatar}).
@@ -72,7 +72,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({enter, Avatar}, #room{avatars=Avatars} = Room) ->
   NewAvatars = [Avatar | Avatars],
   UpdatedRoom = Room#room{avatars=NewAvatars},
-  sm_avatar:notify(Avatar, {look_result, Room}),
+  simmoa_avatar:notify(Avatar, {look_result, Room}),
   {noreply, UpdatedRoom};
 
 handle_cast({leave, Avatar}, #room{avatars=Avatars} = Room) ->

@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : sm_tcp_acceptor.erl
+%%% File    : simmoa_tcp_acceptor.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
 %%% Description : Accepts TCP connections and spawns a handler process for each.
 %%% Created : August 29, 2009 
@@ -23,7 +23,7 @@
 
 -define(SERVER, ?MODULE).
 -define(PORT, 5555).
-%-define(SOCKET_MODULE, 'sm_socket').
+%-define(SOCKET_MODULE, 'simmoa_socket').
 
 %%====================================================================
 %% API
@@ -104,10 +104,10 @@ handle_info({inet_async, ListenSocket, Ref, {ok, ClientSocket}},
         %% New client connected - spawn a new process using the simple_one_for_one
         %% supervisor.
 	X = Counter + 1,
-	Name = "sm_tcp_client",
+	Name = "simmoa_tcp_client",
 	Reference = list_to_atom(Name ++ "_" ++ integer_to_list(X)),
 	Module = list_to_atom(Name),
-        {ok, Pid} = sm_sup:start_child(Module, ClientSocket, Reference),
+        {ok, Pid} = simmoa_sup:start_child(Module, ClientSocket, Reference),
         gen_tcp:controlling_process(ClientSocket, Pid),
 
         %% Signal the network driver that we are ready to accept another connection

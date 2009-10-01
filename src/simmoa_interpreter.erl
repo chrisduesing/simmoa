@@ -16,28 +16,28 @@ notify(Update, Player) ->
 %% Internal - inbound 
 
 command_to_action("north", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, north); 
+  simmoa_avatar:move(Avatar, north); 
 
 command_to_action("n", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, north);
+  simmoa_avatar:move(Avatar, north);
 
 command_to_action("east", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, east);  
+  simmoa_avatar:move(Avatar, east);  
 
 command_to_action("e", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, east);  
+  simmoa_avatar:move(Avatar, east);  
 
 command_to_action("west", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, west);  
+  simmoa_avatar:move(Avatar, west);  
 
 command_to_action("w", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, west);  
+  simmoa_avatar:move(Avatar, west);  
 
 command_to_action("south", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, south);  
+  simmoa_avatar:move(Avatar, south);  
 
 command_to_action("s", _Args, #player{avatar=Avatar} = _Player) ->
-  sm_avatar:move(Avatar, south);  
+  simmoa_avatar:move(Avatar, south);  
 
 command_to_action("help", _Args, #player{client=Client, client_module=ClientModule} = _Player) ->
   {ok, Binary} = file:read_file("help"),
@@ -59,9 +59,9 @@ notification_to_message({location, {X, Y}}, #player{client=Client, client_module
   ClientModule:notify(Client, lists:flatten(Message));
 
 notification_to_message({_, Update}, #player{avatar=Avatar} = _Player) ->
-  io:format("sm_interpreter received an unhandled update ~p for ~p~n", [Update, Avatar]);
+  io:format("simmoa_interpreter received an unhandled update ~p for ~p~n", [Update, Avatar]);
 
 notification_to_message(_Update, #player{avatar=Avatar} = _Player) ->
-  io:format("sm_interpreter received an unhandled update for ~p, dropping~n", [Avatar]).
+  io:format("simmoa_interpreter received an unhandled update for ~p, dropping~n", [Avatar]).
 
 

@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : sm_tcp_client.erl
+%%% File    : simmoa_tcp_client.erl
 %%% Author  : Chris Duesing <chris.duesing@gmail.com>
 %%% Description : A tcp socket
 %%%
@@ -59,11 +59,11 @@ init([Socket, Client]) ->
   io:format("~p logging in.\n", [Data]),
   Avatar = list_to_atom(Data),
   Player = #player{avatar=Avatar, client=Client, client_module=?MODULE},
-  sm_avatar:start_link(Player),
+  simmoa_avatar:start_link(Player),
   {ok, Motd} = file:read_file("motd"),
   write_to_output(Socket, Motd),
-  RoomId = sm_world:get_location_id({0,0}),
-  sm_room:enter(RoomId, Avatar),  
+  RoomId = simmoa_world:get_location_id({0,0}),
+  simmoa_room:enter(RoomId, Avatar),  
   inet:setopts(Socket, [{active, once}]),
   {ok, #state{socket = Socket,
               player = Player}};
@@ -145,6 +145,6 @@ write_to_output(Socket, Message) ->
 
 handle_request({data, RawData}, #state{player=Player} = _State)  ->
   [CommandString|Args] = string:tokens(RawData, " \r\n"),
-  sm_interpreter:interpret(CommandString, Args, Player),
+  simmoa_interpreter:interpret(CommandString, Args, Player),
   ok.
 

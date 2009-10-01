@@ -46,8 +46,8 @@ init([]) ->
   Rooms = [],
   %Rooms ++ [],  
   %Rooms ++ [],
-sm_room:start_link({0, 0}, "An uninteresting room."),
-sm_room:start_link({0, 1}, "A room full of monkeys!"),
+simmoa_room:start_link({0, 0}, "An uninteresting room."),
+simmoa_room:start_link({0, 1}, "A room full of monkeys!"),
 
   {ok, #state{rooms=Rooms}}.
 
