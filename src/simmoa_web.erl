@@ -30,7 +30,10 @@ loop(Req, DocRoot) ->
             end;
         'POST' ->
             case Path of
+		"login" ->
+		    Req:ok({200, ["You have submitted to ", Req:get(raw_path), ".\n"]});
                 _ ->
+		    io:format("Received POST request to ~p~n",[Path]),
                     Req:not_found()
             end;
         _ ->
