@@ -12,23 +12,10 @@ download from github.
 run make from the command line.
 
 
-Running:
------------------------------
-./start.sh from the command line
-or
-application:start(simmoa). from the Erlang repl
-
-
 Use:
------------------------------
-Telnet to port 5555. 
-Enter a player name when prompted. 
-Then any further input is interpreted as game commands.
+----------------------------
+simmoa is now the core libraries and runtime for a
+flexible mud system. It is meant to be embedded in
+other projects. 
 
-coming soon:
-http://localhost:8000/
-
-Feedback:
------------------------------
-is most welcome!
-send me a note: chris.duesing at gmail
+See simmoa_tcp and simmoa_web as examples of telnet and web based clients.
