@@ -1,0 +1,33 @@
+simmoa is an Erlang based MUD
+=============================
+
+License: 
+-----------------------------
+The code is released under the MIT license.
+
+
+Installation:
+-----------------------------
+This project uses Erlware for building and releasing. You can get Erlware from erlware.org. Install faxien and then sinan.
+
+Once you have Faxien and Sinan installed you can download Simmoa from github.
+
+To build the project go in to the top level simmoa directory and run
+>sinan
+
+To install simmoa on your system run
+>faxien ir simmoa
+
+After this you can simply type
+>simmoa
+
+to start and run the app.
+
+
+Use:
+----------------------------
+simmoa is now the core libraries and runtime for a
+flexible mud system. It is meant to be embedded in
+other projects. 
+
+See simmoa_tcp and simmoa_web as examples of telnet and web based clients.
