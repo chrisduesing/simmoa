@@ -1,0 +1,21 @@
+simmoa is an Erlang based MUD
+=============================
+
+License: 
+-----------------------------
+The code is released under the MIT license.
+
+
+Installation:
+-----------------------------
+download from github.
+run make from the command line.
+
+
+Use:
+----------------------------
+simmoa is now the core libraries and runtime for a
+flexible mud system. It is meant to be embedded in
+other projects. 
+
+See simmoa_tcp and simmoa_web as examples of telnet and web based clients.
