@@ -1,4 +1,7 @@
-[{eunit,"2.1.4",[stdlib],"/usr/local/erlware/lib/eunit-2.1.4"},
+[{simmoa_tcp,"0.1.0",
+             [kernel,stdlib,simmoa,eunit],
+             "/Users/chrisduesing/projects/simmoa/_build/development/apps/simmoa_tcp-0.1.0"},
+ {eunit,"2.1.4",[stdlib],"/usr/local/erlware/lib/eunit-2.1.4"},
  {stdlib,"1.16.4",[kernel],"/usr/local/erlware/lib/stdlib-1.16.4"},
  {kernel,"2.13.4",[],"/usr/local/erlware/lib/kernel-2.13.4"},
  {simmoa,"0.1.0",
