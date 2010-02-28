@@ -1,11 +1,12 @@
-%% @author author <author@example.com>
-%% @copyright YYYY author.
-
-%% @doc TEMPLATE.
+%%% File    : simmoa.erl
+%%% Author  : Chris Duesing <chris.duesing@gmail.com>
+%%% Description : 
+%%% Created : 27 Feb 2010 by Chris Duesing <chris.duesing@gmail.com>
 
 -module(simmoa).
 -author('author <author@example.com>').
 -export([start/0, stop/0]).
+
 
 ensure_started(App) ->
     case application:start(App) of
@@ -18,7 +19,6 @@ ensure_started(App) ->
 %% @spec start() -> ok
 %% @doc Start the simmoa server.
 start() ->
-    simmoa_deps:ensure(),
     ensure_started(crypto),
     application:start(simmoa).
 
