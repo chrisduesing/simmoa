@@ -40,13 +40,13 @@ start_link() ->
 %% specifications.
 %%--------------------------------------------------------------------
 init([]) ->
-    Simmoa = {'simmoa_sup',{'simmoa_sup',start_link,[]},
-            permanent,2000,worker,['simmoa_sup']},
+%    Simmoa = {'simmoa_sup',{'simmoa_sup',start_link,[]},
+%            permanent,2000,worker,['simmoa_sup']},
 
     TcpAcceptor = {'simmoa_tcp_acceptor',{'simmoa_tcp_acceptor',start_link,[]},
             permanent,2000,worker,['simmoa_tcp_acceptor']},
 
-    {ok,{{one_for_all,0,1}, [Simmoa, TcpAcceptor]}}.
+    {ok,{{one_for_all,0,1}, [TcpAcceptor]}}.
 
 %%====================================================================
 %% Internal functions
