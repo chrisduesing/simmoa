@@ -4,17 +4,10 @@
 %%% Created : 27 Feb 2010 by Chris Duesing <chris.duesing@gmail.com>
 
 -module(simmoa).
--author('author <author@example.com>').
+
 -export([start/0, stop/0]).
 
 
-ensure_started(App) ->
-    case application:start(App) of
-        ok ->
-            ok;
-        {error, {already_started, App}} ->
-            ok
-    end.
         
 %% @spec start() -> ok
 %% @doc Start the simmoa server.
@@ -28,3 +21,17 @@ stop() ->
     Res = application:stop(simmoa),
     application:stop(crypto),
     Res.
+
+%new_player(Name) ->
+%    #player{
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
+ensure_started(App) ->
+    case application:start(App) of
+        ok ->
+            ok;
+        {error, {already_started, App}} ->
+            ok
+    end.
